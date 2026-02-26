@@ -110,7 +110,7 @@
                             📁 {{ $selectedCategory }}
                         </span>
                     @endif
-                    @if($selectedInStock !== '')
+                    @if($selectedInStock === 'true' || $selectedInStock === 'false')
                         <span class="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm">
                             📦 {{ $selectedInStock === 'true' ? 'En stock' : 'Agotado' }}
                         </span>

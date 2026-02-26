@@ -75,6 +75,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Search Results Limit
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure the default number of results returned by search.
+    |
+    */
+
+    'limit' => 1000,
+
+    /*
+    |--------------------------------------------------------------------------
     | Soft Deletes
     |--------------------------------------------------------------------------
     |
@@ -159,52 +170,65 @@ return [
 
     'typesense' => [
         'client-settings' => [
-            'api_key' => env('TYPESENSE_API_KEY', 'xyz'),
+            'api_key' => env('TYPESENSE_API_KEY', 'g4kdQ09wlQO4y7yCd4aYTR6gMaC6hPYC'),
             'nodes' => [
                 [
-                    'host' => env('TYPESENSE_HOST', 'localhost'),
-                    'port' => env('TYPESENSE_PORT', '8108'),
+                    'host' => env('TYPESENSE_HOST', 'p5n9abdje0gvkq3up-1.a2.typesense.net'),
+                    'port' => env('TYPESENSE_PORT', '443'),
                     'path' => env('TYPESENSE_PATH', ''),
-                    'protocol' => env('TYPESENSE_PROTOCOL', 'http'),
+                    'protocol' => env('TYPESENSE_PROTOCOL', 'https'),
                 ],
             ],
             'nearest_node' => [
-                'host' => env('TYPESENSE_HOST', 'localhost'),
-                'port' => env('TYPESENSE_PORT', '8108'),
+                'host' => env('TYPESENSE_HOST', 'p5n9abdje0gvkq3up-1.a2.typesense.net'),
+                'port' => env('TYPESENSE_PORT', '443'),
                 'path' => env('TYPESENSE_PATH', ''),
-                'protocol' => env('TYPESENSE_PROTOCOL', 'http'),
+                'protocol' => env('TYPESENSE_PROTOCOL', 'https'),
             ],
             'connection_timeout_seconds' => env('TYPESENSE_CONNECTION_TIMEOUT_SECONDS', 2),
             'healthcheck_interval_seconds' => env('TYPESENSE_HEALTHCHECK_INTERVAL_SECONDS', 30),
             'num_retries' => env('TYPESENSE_NUM_RETRIES', 3),
             'retry_interval_seconds' => env('TYPESENSE_RETRY_INTERVAL_SECONDS', 1),
         ],
-        // 'max_total_results' => env('TYPESENSE_MAX_TOTAL_RESULTS', 1000),
         'model-settings' => [
-            // User::class => [
-            //     'collection-schema' => [
-            //         'fields' => [
-            //             [
-            //                 'name' => 'id',
-            //                 'type' => 'string',
-            //             ],
-            //             [
-            //                 'name' => 'name',
-            //                 'type' => 'string',
-            //             ],
-            //             [
-            //                 'name' => 'created_at',
-            //                 'type' => 'int64',
-            //             ],
-            //         ],
-            //         'default_sorting_field' => 'created_at',
-            //     ],
-            //     'search-parameters' => [
-            //         'query_by' => 'name'
-            //     ],
-            // ],
+            \App\Models\Product::class => [
+                'collection-schema' => [
+                    'fields' => [
+                        [
+                            'name' => 'id',
+                            'type' => 'string',
+                        ],
+                        [
+                            'name' => 'name',
+                            'type' => 'string',
+                        ],
+                        [
+                            'name' => 'description',
+                            'type' => 'string',
+                        ],
+                        [
+                            'name' => 'category',
+                            'type' => 'string',
+                            'facet' => true,
+                        ],
+                        [
+                            'name' => 'price',
+                            'type' => 'float',
+                        ],
+                        [
+                            'name' => 'in_stock',
+                            'type' => 'bool',
+                            'facet' => true,
+                        ],
+                    ],
+                    'default_sorting_field' => 'id',
+                ],
+                'search-parameters' => [
+                    'query_by' => 'name,description,category'
+                ],
+            ],
         ],
-        'import_action' => env('TYPESENSE_IMPORT_ACTION', 'upsert'),
+        'import_action' => 'create',
     ],
 
 ];

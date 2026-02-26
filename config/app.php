@@ -160,7 +160,11 @@ return [
          * Package Service Providers...
          */
         Laravel\Scout\ScoutServiceProvider::class,
-        Typesense\LaravelTypesense\TypesenseServiceProvider::class,
+
+        /*
+         * Custom Service Providers...
+         */
+        App\Providers\TypesenseServiceProvider::class,
 
         /*
          * Application Service Providers...
