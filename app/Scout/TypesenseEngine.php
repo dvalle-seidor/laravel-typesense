@@ -94,21 +94,64 @@ class TypesenseEngine extends Engine
         $searchParameters = [
             'q' => $builder->query,
             'query_by' => 'name,description,category',
-            'page' => $builder->limit ? floor($builder->offset / $builder->limit) + 1 : 1,
+            'page' => $builder->limit && isset($builder->offset) ? floor($builder->offset / $builder->limit) + 1 : 1,
             'per_page' => $builder->limit ?: 10,
         ];
 
         // Add filters
         if (!empty($builder->wheres)) {
             $filterBy = [];
-            foreach ($builder->wheres as $field => $value) {
-                if (is_bool($value)) {
-                    $filterBy[] = "{$field}:" . ($value ? 'true' : 'false');
+            
+            foreach ($builder->wheres as $key => $value) {
+                // Handle Laravel Scout comparison operators
+                if (is_array($value) && isset($value['operator'])) {
+                    $field = $value['column'];
+                    $operator = $value['operator'];
+                    $filterValue = $value['value'];
+                    
+                    // Convert Laravel operators to Typesense operators
+                    switch ($operator) {
+                        case '>=':
+                            $filterBy[] = "{$field}:>={$filterValue}";
+                            break;
+                        case '<=':
+                            $filterBy[] = "{$field}:<={$filterValue}";
+                            break;
+                        case '>':
+                            $filterBy[] = "{$field}:>{$filterValue}";
+                            break;
+                        case '<':
+                            $filterBy[] = "{$field}:<{$filterValue}";
+                            break;
+                        case '=':
+                        case '==':
+                            $filterBy[] = "{$field}:={$filterValue}";
+                            break;
+                        default:
+                            $filterBy[] = "{$field}:='{$filterValue}'";
+                    }
+                } elseif (is_string($value) && in_array($value, ['>=', '<=', '>', '<', '=', '=='])) {
+                    // Handle case where operator is sent as value (Laravel Scout bug)
+                    // We need to get the actual value from the next filter or from context
+                    // For now, we'll skip this filter as it's malformed
+                    continue;
                 } else {
-                    $filterBy[] = "{$field}:{$value}";
+                    // Handle simple key-value filters
+                    $field = $key;
+                    $filterValue = $value;
+                    
+                    if (is_bool($filterValue)) {
+                        $filterBy[] = "{$field}:" . ($filterValue ? 'true' : 'false');
+                    } elseif (is_numeric($filterValue)) {
+                        $filterBy[] = "{$field}:={$filterValue}";
+                    } else {
+                        $filterBy[] = "{$field}:'{$filterValue}'";
+                    }
                 }
             }
-            $searchParameters['filter_by'] = implode(' && ', $filterBy);
+            
+            $filterString = implode(' && ', $filterBy);
+            $searchParameters['filter_by'] = $filterString;
         }
 
         return $collection->documents->search($searchParameters);

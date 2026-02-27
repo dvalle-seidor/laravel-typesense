@@ -226,6 +226,18 @@ return [
                 'search-parameters' => [
                     'query_by' => 'name,description,category'
                 ],
+                'synonyms' => [
+                    'laptop_synonyms' => 'laptop=notebook=portable=computer',
+                    'mouse_synonyms' => 'mouse=raton',
+                    'keyboard_synonyms' => 'keyboard=teclado',
+                    'electronics_synonyms' => 'electronics=electronica',
+                    'furniture_synonyms' => 'furniture=muebles',
+                    'desk_synonyms' => 'desk=escritorio=mesa',
+                    'chair_synonyms' => 'chair=silla',
+                    'monitor_synonyms' => 'monitor=pantalla',
+                    'webcam_synonyms' => 'webcam=camara',
+                    'hub_synonyms' => 'hub=concentrador'
+                ]
             ],
         ],
         'import_action' => 'create',

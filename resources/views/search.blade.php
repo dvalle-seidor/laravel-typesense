@@ -5,6 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Búsqueda Avanzada - Typesense</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .suggestion-item:hover {
+            background-color: #f9fafb;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
@@ -13,17 +38,22 @@
         <!-- Formulario principal de búsqueda -->
         <div class="max-w-4xl mx-auto mb-8">
             <form action="/search" method="GET" class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex gap-2 mb-4">
-                    <input 
-                        type="text" 
-                        name="q" 
-                        value="{{ $query }}"
-                        placeholder="Buscar productos..." 
-                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                    >
+                <div class="flex gap-2 mb-4 relative">
+                    <div class="flex-1 relative">
+                        <input 
+                            type="text" 
+                            name="q" 
+                            value="{{ $query }}"
+                            placeholder="Buscar productos..." 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                            id="searchInput"
+                            autocomplete="off"
+                        >
+                        <div id="suggestions" class="autocomplete-suggestions hidden"></div>
+                    </div>
                     <button 
                         type="submit" 
-                        class="px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+                        class="inline-flex items-center px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
                     >
                         🔍 Buscar
                     </button>
@@ -54,41 +84,51 @@
                         </select>
                     </div>
                     
-                    <!-- Precio mínimo -->
+                    <!-- Rango de Precio -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Precio Mínimo</label>
-                        <input 
-                            type="number" 
-                            name="min_price" 
-                            value="{{ $minPrice }}"
-                            placeholder="0.00" 
-                            step="0.01"
-                            min="0"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rango de Precio</label>
+                        <select name="price_range" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Todos los precios</option>
+                            @foreach($priceRanges as $key => $range)
+                                <option value="{{ $key }}" {{ $priceRange == $key ? 'selected' : '' }}>
+                                    {{ $range['label'] }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     
-                    <!-- Precio máximo -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Precio Máximo</label>
-                        <input 
-                            type="number" 
-                            name="max_price" 
-                            value="{{ $maxPrice }}"
-                            placeholder="999.99" 
-                            step="0.01"
-                            min="0"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
+                    <!-- Precio Personalizado (colspan 2) -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Precio Personalizado</label>
+                        <div class="flex gap-2">
+                            <input 
+                                type="number" 
+                                name="min_price" 
+                                value="{{ $minPrice }}"
+                                placeholder="Mínimo" 
+                                step="0.01"
+                                min="0"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                            <input 
+                                type="number" 
+                                name="max_price" 
+                                value="{{ $maxPrice }}"
+                                placeholder="Máximo" 
+                                step="0.01"
+                                min="0"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Botones de acción -->
                 <div class="flex gap-2 mt-4">
-                    <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                    <button type="submit" class="inline-flex items-center px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium">
                         Aplicar Filtros
                     </button>
-                    <a href="/search" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-center">
+                    <a href="/search" class="inline-flex items-center px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium">
                         Limpiar Filtros
                     </a>
                 </div>
@@ -216,10 +256,63 @@
             
             <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <p class="text-sm text-yellow-800">
-                    <strong>💡 Tip:</strong> Prueba buscar "lapto" (sin 'p'), "electro", "book" o usa los filtros de precio y categoría
+                    <strong>💡 Tip:</strong> Prueba buscar "lapto" (sin 'p'), "raton", "teclado" o usa los rangos de precio predefinidos. Los sinónimos están activos: "notebook" → "laptop", "raton" → "mouse"
                 </p>
             </div>
         </div>
     </div>
+
+    <script>
+        // Autocomplete functionality
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsDiv = document.getElementById('suggestions');
+        let debounceTimer;
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            clearTimeout(debounceTimer);
+            
+            if (query.length < 2) {
+                suggestionsDiv.classList.add('hidden');
+                return;
+            }
+            
+            debounceTimer = setTimeout(() => {
+                fetch(`/api/suggestions?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(suggestions => {
+                        if (suggestions.length > 0) {
+                            suggestionsDiv.innerHTML = suggestions.map(item => `
+                                <div class="suggestion-item" onclick="selectSuggestion('${item.name}')">
+                                    <div class="font-semibold">${item.name}</div>
+                                    <div class="text-sm text-gray-600">${item.category} - $${item.price}</div>
+                                </div>
+                            `).join('');
+                            suggestionsDiv.classList.remove('hidden');
+                        } else {
+                            suggestionsDiv.classList.add('hidden');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching suggestions:', error);
+                        suggestionsDiv.classList.add('hidden');
+                    });
+            }, 300);
+        });
+
+        function selectSuggestion(name) {
+            searchInput.value = name;
+            suggestionsDiv.classList.add('hidden');
+            searchInput.form.submit();
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                suggestionsDiv.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>

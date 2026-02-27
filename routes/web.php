@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\ApiController;
 use App\Models\Product;
 
 /*
@@ -20,6 +21,8 @@ Route::get('/', function () {
 });
 
 Route::get('/search', [SearchController::class, 'index']);
+
+Route::get('/api/suggestions', [ApiController::class, 'searchSuggestions']);
 
 Route::get('/import', function () {
     Product::makeAllSearchable();
